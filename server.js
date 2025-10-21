@@ -39,7 +39,8 @@ const MAX_BODY_BYTES = '16kb';
 async function main() {
 
     const app = express();
-    app.set('trust proxy', false);
+    // Trust proxy for Docker/reverse proxy environments
+    app.set('trust proxy', true);
     app.disable('x-powered-by');
     app.use(helmet({ contentSecurityPolicy: false, hsts: true }));
     app.use(express.json({ limit: MAX_BODY_BYTES }));
