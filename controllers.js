@@ -1,4 +1,5 @@
-const { fetch } = require('undici');
+// Using Node.js built-in fetch (available in Node.js v18+)
+// const { fetch } = require('undici'); // Removed due to compatibility issues
 const crypto = require('crypto');
 
 // --------------------- Config (from env) ---------------------
