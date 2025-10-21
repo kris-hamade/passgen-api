@@ -35,8 +35,6 @@ const RATE_WINDOW_MS = parseInt(process.env.RATE_WINDOW_MS || '60000', 10);
 const RATE_MAX = parseInt(process.env.RATE_MAX || '60', 10);
 const MAX_BODY_BYTES = '16kb';
 
-const { startQrngLoop } = require('./controllers');
-
 // ------------------- Express app -------------------
 async function main() {
 

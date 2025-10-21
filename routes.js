@@ -1,9 +1,10 @@
-const { passwordController, healthController } = require('./controllers');
+const { passwordController, healthController, adminController } = require('./controllers');
 
 // Route definitions
 const routeDefinitions = [
     { endpoint: '/v1/passwords', method: 'POST', handler: passwordController.generatePasswords },
-    { endpoint: '/healthz', method: 'GET', handler: healthController.healthz }
+    { endpoint: '/healthz', method: 'GET', handler: healthController.healthz },
+    { endpoint: '/admin/reseed', method: 'POST', handler: adminController.reseedNow }
 ];
 
 // Build routes map
