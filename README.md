@@ -2,7 +2,7 @@
 
 A high-security password generation API that combines OS entropy with quantum random number generation (QRNG) for maximum cryptographic security. Built with Node.js and Express, featuring Docker containerization and GitHub Actions CI/CD.
 
-## 🔐 Security Features
+## 🔐 Security Features 
 
 - **Dual Entropy Sources**: Combines OS CSPRNG with quantum random number generation
 - **HKDF-SHA256 Mixing**: Uses HKDF for secure entropy mixing and rejection sampling
