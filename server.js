@@ -39,8 +39,9 @@ const MAX_BODY_BYTES = '16kb';
 async function main() {
 
     const app = express();
-    // Trust proxy for Docker/reverse proxy environments
-    app.set('trust proxy', true);
+    // Trust proxy for Docker/reverse proxy environments - but be specific about which proxies to trust
+    // In Docker, we typically trust the first proxy (Docker's internal network)
+    app.set('trust proxy', 1);
     app.disable('x-powered-by');
     app.use(helmet({ contentSecurityPolicy: false, hsts: true }));
     app.use(express.json({ limit: MAX_BODY_BYTES }));
@@ -63,7 +64,17 @@ async function main() {
         next();
     });
 
-    app.use(rateLimit({ windowMs: RATE_WINDOW_MS, max: RATE_MAX, standardHeaders: true, legacyHeaders: false }));
+    app.use(rateLimit({ 
+        windowMs: RATE_WINDOW_MS, 
+        max: RATE_MAX, 
+        standardHeaders: true, 
+        legacyHeaders: false,
+        // Use a custom key generator that handles proxy headers securely
+        keyGenerator: (req) => {
+            // Use the real IP from the trusted proxy, fallback to connection IP
+            return req.ip || req.connection.remoteAddress;
+        }
+    }));
 
     // Generic router using the routes table (catch-all without pattern)
     app.use((req, res, next) => {
