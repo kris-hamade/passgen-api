@@ -1,9 +1,20 @@
 {
+  "name": "passgen-api",
+  "version": "1.0.0",
+  "description": "Password generation API",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
   "dependencies": {
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "express-rate-limit": "^8.1.0",
     "helmet": "^8.1.0",
     "undici": "^7.16.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
