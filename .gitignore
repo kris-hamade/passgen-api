@@ -54,7 +54,7 @@ temp/
 *.tsbuildinfo
 
 # Lockfiles (if you prefer to commit only one)
-package-lock.json
+# package-lock.json - keeping this for Docker builds
 yarn.lock
 pnpm-lock.yaml
 
