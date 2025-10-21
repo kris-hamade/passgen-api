@@ -68,12 +68,9 @@ async function main() {
         windowMs: RATE_WINDOW_MS, 
         max: RATE_MAX, 
         standardHeaders: true, 
-        legacyHeaders: false,
-        // Use a custom key generator that handles proxy headers securely
-        keyGenerator: (req) => {
-            // Use the real IP from the trusted proxy, fallback to connection IP
-            return req.ip || req.connection.remoteAddress;
-        }
+        legacyHeaders: false
+        // Using default keyGenerator which properly handles IPv6 and proxy headers
+        // with our trust proxy: 1 configuration
     }));
 
     // Generic router using the routes table (catch-all without pattern)
