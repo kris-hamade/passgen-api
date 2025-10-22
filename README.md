@@ -23,8 +23,8 @@ A high-security password generation API that combines OS entropy with quantum ra
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/kris-hamade/Password_Generator.git
-   cd Password_Generator
+   git clone https://github.com/kris-hamade/passgen-api.git
+   cd passgen-api
    ```
 
 2. **Install dependencies**
@@ -233,7 +233,7 @@ Add these secrets to your repository:
 ### Project Structure
 
 ```
-Password_Generator/
+passgen-api/
 ├── controllers.js      # API controllers and business logic
 ├── routes.js          # Route definitions
 ├── server.js          # Express server setup
@@ -296,7 +296,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 For issues and questions:
 
-1. Check the [Issues](https://github.com/yourusername/Password_Generator/issues) page
+1. Check the [Issues](https://github.com/yourusername/passgen-api/issues) page
 2. Create a new issue with detailed information
 3. Include environment details and error logs
 
