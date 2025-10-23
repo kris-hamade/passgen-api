@@ -1,10 +1,18 @@
-const { passwordController, healthController, adminController } = require('./controllers');
+const { passwordController, healthController, adminController, diceController } = require('./controllers');
+
+// Import authentication middleware (will be passed from server.js)
+let requireApiKey = null;
+function setAuthMiddleware(authMiddleware) {
+    requireApiKey = authMiddleware;
+}
 
 // Route definitions
 const routeDefinitions = [
     { endpoint: '/v1/passwords', method: 'POST', handler: passwordController.generatePasswords },
     { endpoint: '/healthz', method: 'GET', handler: healthController.healthz },
-    { endpoint: '/admin/reseed', method: 'POST', handler: adminController.reseedNow }
+    { endpoint: '/v1/admin/reseed', method: 'POST', handler: adminController.reseedNow, requiresAuth: true },
+    { endpoint: '/v1/roll', method: 'POST', handler: diceController.rollDice },
+    { endpoint: '/v1/roll/:expression', method: 'GET', handler: diceController.rollDice }
 ];
 
 // Build routes map
@@ -19,7 +27,8 @@ const availableEndpoints = routeDefinitions.map(r => `${r.method} ${r.endpoint}`
 module.exports = {
     routes,
     routeDefinitions,
-    availableEndpoints
+    availableEndpoints,
+    setAuthMiddleware
 };
 
 

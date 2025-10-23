@@ -348,10 +348,161 @@ const adminController = {
     }
 };
 
+// --------------------- Dice Roll Controller ---------------------
+const diceController = {
+    rollDice: async (req, res) => {
+        try {
+            const { expression, rolls = 1 } = req.body || {};
+            const pathExpression = req.params?.expression;
+            
+            // Use path parameter if no body expression provided
+            const diceExpression = expression || pathExpression;
+            
+            if (!diceExpression) {
+                return res.status(400).json({
+                    error: 'Dice expression required',
+                    examples: [
+                        'd20',
+                        '2d6+3',
+                        'd100-10',
+                        '3d8+2d4+5',
+                        'd20+5 for attack roll'
+                    ]
+                });
+            }
+
+            const results = [];
+            const totalRolls = Math.min(Math.max(parseInt(rolls, 10) || 1, 1), 100); // Limit to 100 rolls max
+
+            for (let i = 0; i < totalRolls; i++) {
+                const result = await parseAndRollDice(diceExpression);
+                results.push(result);
+            }
+
+            res.json({
+                expression: diceExpression,
+                rolls: results,
+                summary: {
+                    totalRolls: results.length,
+                    individualResults: results.map(r => r.total),
+                    min: Math.min(...results.map(r => r.total)),
+                    max: Math.max(...results.map(r => r.total)),
+                    average: results.reduce((sum, r) => sum + r.total, 0) / results.length
+                }
+            });
+
+        } catch (error) {
+            res.status(400).json({
+                error: 'Invalid dice expression',
+                message: error.message,
+                examples: [
+                    'd20',
+                    '2d6+3',
+                    'd100-10',
+                    '3d8+2d4+5'
+                ]
+            });
+        }
+    }
+};
+
+// Parse dice expression and roll the dice
+async function parseAndRollDice(expression) {
+    // Clean the expression
+    const cleanExpr = expression.toLowerCase().replace(/\s+/g, '');
+    
+    // Parse dice notation: XdY+Z or XdY-Z or just dY
+    const diceRegex = /(\d*)d(\d+)([+-]\d+)?/g;
+    let match;
+    let total = 0;
+    const rolls = [];
+    const breakdown = [];
+
+    while ((match = diceRegex.exec(cleanExpr)) !== null) {
+        const numDice = parseInt(match[1]) || 1;
+        const diceSize = parseInt(match[2]);
+        const modifier = match[3] ? parseInt(match[3]) : 0;
+
+        if (diceSize < 1 || diceSize > 1000) {
+            throw new Error(`Invalid dice size: d${diceSize}. Must be between 1 and 1000.`);
+        }
+
+        if (numDice < 1 || numDice > 100) {
+            throw new Error(`Invalid number of dice: ${numDice}. Must be between 1 and 100.`);
+        }
+
+        // Roll the dice
+        const diceRolls = [];
+        for (let i = 0; i < numDice; i++) {
+            const roll = await rollSingleDie(diceSize);
+            diceRolls.push(roll);
+        }
+
+        const diceTotal = diceRolls.reduce((sum, roll) => sum + roll, 0) + modifier;
+        total += diceTotal;
+        
+        rolls.push(...diceRolls);
+        breakdown.push({
+            notation: `${numDice}d${diceSize}${modifier ? (modifier > 0 ? '+' : '') + modifier : ''}`,
+            rolls: diceRolls,
+            modifier,
+            subtotal: diceTotal
+        });
+    }
+
+    // Handle any remaining numbers (standalone modifiers)
+    const remainingNumbers = cleanExpr.replace(/(\d*)d\d+([+-]\d+)?/g, '').match(/[+-]?\d+/g);
+    if (remainingNumbers) {
+        for (const num of remainingNumbers) {
+            const value = parseInt(num);
+            if (!isNaN(value)) {
+                total += value;
+                breakdown.push({
+                    notation: num,
+                    rolls: [],
+                    modifier: value,
+                    subtotal: value
+                });
+            }
+        }
+    }
+
+    if (total === 0 && rolls.length === 0) {
+        throw new Error('No valid dice notation found in expression');
+    }
+
+    return {
+        total,
+        rolls,
+        breakdown,
+        expression: cleanExpr
+    };
+}
+
+// Roll a single die using our CSPRNG
+async function rollSingleDie(sides) {
+    if (sides < 1) throw new Error('Die must have at least 1 side');
+    if (sides === 1) return 1;
+    
+    // Get random bytes and convert to die roll
+    const bytes = await csprng.getBytes(4); // 4 bytes = 32 bits
+    const randomValue = bytes.readUInt32BE(0);
+    
+    // Use rejection sampling to avoid modulo bias
+    const maxAcceptable = Math.floor(0x100000000 / sides) * sides;
+    if (randomValue >= maxAcceptable) {
+        // Re-roll if we hit the bias zone
+        return await rollSingleDie(sides);
+    }
+    
+    return (randomValue % sides) + 1;
+}
+
 module.exports = {
     passwordController,
     healthController,
     adminController,
+    diceController,
 };
 
 

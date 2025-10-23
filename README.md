@@ -1,6 +1,6 @@
 # Secure Password Generator API
 
-A high-security password generation API that combines OS entropy with quantum random number generation (QRNG) for maximum cryptographic security. Built with Node.js and Express, featuring Docker containerization and GitHub Actions CI/CD.
+A high-security password generation API that combines OS entropy with quantum random number generation (QRNG) for maximum cryptographic security. Built with Node.js and Express, featuring Docker containerization, GitHub Actions CI/CD, dice rolling for tabletop games, and secure admin endpoints.
 
 ## 🔐 Security Features
 
@@ -10,6 +10,8 @@ A high-security password generation API that combines OS entropy with quantum ra
 - **No Modulo Bias**: Rejection sampling ensures uniform distribution
 - **Rate Limiting**: Built-in protection against abuse
 - **Security Headers**: Helmet.js for comprehensive security headers
+- **API Key Authentication**: Secure admin endpoints with API key protection
+- **Dice Rolling**: Cryptographically secure dice for D&D and tabletop games
 
 ## 🚀 Quick Start
 
@@ -63,6 +65,7 @@ The API will be available at `http://localhost:8080`
 | `QRNG_URL` | `https://api.qrng.outshift.com/api/v1/random_numbers` | QRNG API endpoint |
 | `QRNG_BITS_PER_BLOCK` | `8` | Bits per QRNG block |
 | `QRNG_RESEED_MS` | `3600000` | Reseed interval (1 hour) |
+| `ADMIN_API_KEY` | - | API key for admin endpoints (required for admin access) |
 
 ### Example .env file
 
@@ -76,6 +79,7 @@ QRNG_API_KEY=your_outshift_api_key_here
 QRNG_URL=https://api.qrng.outshift.com/api/v1/random_numbers
 QRNG_BITS_PER_BLOCK=8
 QRNG_RESEED_MS=3600000
+ADMIN_API_KEY=your_secure_admin_api_key_here
 ```
 
 ## 📡 API Endpoints
@@ -127,6 +131,59 @@ Generate cryptographically secure passwords with customizable parameters.
 }
 ```
 
+### Roll Dice
+
+**POST** `/v1/roll` or **GET** `/v1/roll/:expression`
+
+Roll cryptographically secure dice for D&D and tabletop games.
+
+**Request Body (POST):**
+```json
+{
+  "expression": "2d6+3",
+  "rolls": 1
+}
+```
+
+**URL Parameter (GET):**
+```
+GET /v1/roll/d20
+GET /v1/roll/2d6+3
+GET /v1/roll/3d8+2d4+5
+```
+
+**Supported Dice Notation:**
+- `d20` - Single d20 roll
+- `2d6+3` - Two d6 dice plus 3
+- `d100` - Percentile dice
+- `3d8+2d4+5` - Complex expressions
+- `d20+5` - Attack roll with modifier
+
+**Response:**
+```json
+{
+  "expression": "2d6+3",
+  "rolls": [{
+    "total": 8,
+    "rolls": [4, 1],
+    "breakdown": [{
+      "notation": "2d6+3",
+      "rolls": [4, 1],
+      "modifier": 3,
+      "subtotal": 8
+    }],
+    "expression": "2d6+3"
+  }],
+  "summary": {
+    "totalRolls": 1,
+    "individualResults": [8],
+    "min": 8,
+    "max": 8,
+    "average": 8
+  }
+}
+```
+
 ### Health Check
 
 **GET** `/healthz`
@@ -143,15 +200,35 @@ Check API health and QRNG status.
 
 ### Admin: Reseed
 
-**POST** `/admin/reseed`
+**POST** `/v1/admin/reseed` 🔐 *Requires API Key*
 
 Manually trigger entropy reseeding (admin endpoint).
+
+**Headers:**
+```
+x-api-key: your_admin_api_key_here
+```
 
 **Response:**
 ```json
 {
   "ok": true,
   "reseededAt": "2024-01-15T10:30:00.000Z"
+}
+```
+
+**Error Responses:**
+```json
+// Missing API key
+{
+  "error": "API key required",
+  "message": "Please provide API key in x-api-key header"
+}
+
+// Invalid API key
+{
+  "error": "Invalid API key",
+  "message": "The provided API key is incorrect"
 }
 ```
 
@@ -167,6 +244,7 @@ docker build -t password-generator .
 docker run -p 8080:8080 \
   -e QRNG_ENABLED=true \
   -e QRNG_API_KEY=your_api_key \
+  -e ADMIN_API_KEY=your_admin_key \
   password-generator
 ```
 
@@ -182,6 +260,7 @@ services:
     environment:
       - QRNG_ENABLED=true
       - QRNG_API_KEY=${QRNG_API_KEY}
+      - ADMIN_API_KEY=${ADMIN_API_KEY}
       - ENABLE_CORS=true
     restart: unless-stopped
 ```
@@ -199,7 +278,8 @@ The project includes automated CI/CD with GitHub Actions:
 Add these secrets to your repository:
 
 1. **QRNG_API_KEY**: Your Outshift QRNG API key
-2. **GITHUB_TOKEN**: Automatically provided by GitHub Actions
+2. **ADMIN_API_KEY**: Your admin API key for protected endpoints
+3. **GITHUB_TOKEN**: Automatically provided by GitHub Actions
 
 ### GitHub Variables (Optional)
 
@@ -258,7 +338,7 @@ passgen-api/
 - `helmet`: Security headers
 - `express-rate-limit`: Rate limiting
 - `dotenv`: Environment variable management
-- `undici`: HTTP client for QRNG API
+- Node.js built-in `fetch`: HTTP client for QRNG API (Node.js 18+)
 
 ## 📊 Performance
 
@@ -272,7 +352,7 @@ passgen-api/
 ### Health Endpoints
 
 - `/healthz`: Basic health check
-- `/admin/reseed`: Manual entropy reseeding
+- `/v1/admin/reseed`: Manual entropy reseeding (requires API key)
 
 ### Logging
 
