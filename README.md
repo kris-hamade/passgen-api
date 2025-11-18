@@ -184,6 +184,35 @@ GET /v1/roll/3d8+2d4+5
 }
 ```
 
+### Entropy: Uint32 Stream
+
+**GET** `/v1/entropy/uint32?count=1024`
+
+Returns an array of 32-bit unsigned integers generated from the internal CSPRNG (mixed OS + QRNG entropy, periodically reseeded).
+
+**Query Parameters**
+
+- `count` (optional): Number of 32-bit integers to return. Defaults to 1024. Clamped to `[1, 5000]`.
+
+**Response**
+
+```json
+{
+  "numbers": [1234567890, 987654321, 42],
+  "meta": {
+    "bitsPerNumber": 32,
+    "count": 3,
+    "sources": {
+      "os": true,
+      "qrng": true,
+      "mixed": true
+    }
+  }
+}
+```
+
+This endpoint is intended for clients that need raw entropy (e.g., custom dice-roller engines).
+
 ### Health Check
 
 **GET** `/healthz`

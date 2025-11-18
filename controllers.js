@@ -406,6 +406,39 @@ const diceController = {
     }
 };
 
+// --------------------- Entropy Controller ---------------------
+const entropyController = {
+    getEntropyUint32: async (req, res, next) => {
+        try {
+            const rawCount = parseInt(req.query.count, 10);
+            const requestedCount = Number.isFinite(rawCount) ? rawCount : 1024;
+
+            // Clamp to a safe range to prevent abuse.
+            const MAX_COUNT = 5000;
+            const count = Math.min(Math.max(requestedCount, 1), MAX_COUNT);
+
+            // Use the shared CSPRNG instance already defined in this module
+            const numbers = await getRandomUint32Array(csprng, count);
+
+            res.json({
+                numbers,
+                meta: {
+                    bitsPerNumber: 32,
+                    count,
+                    sources: {
+                        // Reflect existing entropy design: OS + QRNG + HKDF mixing.
+                        os: true,
+                        qrng: QRNG_ENABLED,
+                        mixed: true
+                    }
+                }
+            });
+        } catch (err) {
+            next(err);
+        }
+    }
+};
+
 // Parse dice expression and roll the dice
 async function parseAndRollDice(expression) {
     // Clean the expression
@@ -498,11 +531,34 @@ async function rollSingleDie(sides) {
     return (randomValue % sides) + 1;
 }
 
+// Helper: generate an array of uint32 values using the existing CSPRNG
+async function getRandomUint32Array(csprng, count) {
+    if (!Number.isFinite(count) || count <= 0) {
+        throw new Error('count must be a positive number');
+    }
+
+    const bytesNeeded = count * 4;
+    // IMPORTANT: this must be the existing CSPRNG method, not a new QRNG call.
+    const buf = await csprng.getBytes(bytesNeeded);
+
+    const numbers = [];
+    for (let i = 0; i < count; i++) {
+        const offset = i * 4;
+        // Endianness doesn't matter as long as it's consistent;
+        // use BE for clarity.
+        const n = buf.readUInt32BE(offset);
+        numbers.push(n >>> 0);
+    }
+
+    return numbers;
+}
+
 module.exports = {
     passwordController,
     healthController,
     adminController,
     diceController,
+    entropyController,
 };
 
 
